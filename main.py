@@ -17,7 +17,7 @@ import operator
 import functools
 
 # Use Enthought traits for type safety
-from traits.api import HasStrictTraits, Int, Dict, Enum, Float, BaseInstance, Instance
+from traits.api import HasStrictTraits,  Instance
 
 from trade import create_GBCE, TradeData
 
@@ -54,7 +54,7 @@ class Quant(HasStrictTraits):
             if stock.stock_type == "Common":
                 dy = stock.last_dividend / market_price
             else:
-                dy =  stock.fixed_dividend*stock.par_value / market_price
+                dy = stock.fixed_dividend*stock.par_value / market_price
         except ZeroDivisionError:
             raise ValueError(f"Error in computing dividend yield for {ticker} at price={market_price}")
         return dy
@@ -81,20 +81,19 @@ class Quant(HasStrictTraits):
             for trade in trades:
                 # filter on timestamp
                 if from_timestamp <= trade.timestamp <= to_timestamp:
-                    #print(trade.timestamp, trade.price, trade.quantity)
                     result += trade.price*trade.quantity
                     volume += trade.quantity
             result /= volume
         except (AttributeError, ZeroDivisionError):
-            #raise ValueError(f"Error in Volume Weighted Stock Price for {ticker}")
             result = "NA"
         return result
 
 
     def get_GBCE_index(self, timestamp, time_interval):
-
+        """
+           compute arithmetic average for a ticket in this time period and then do geometric mean for all tickers
+        """
         from_timestamp = timestamp - time_interval
-        # compute arithmetic average for a ticket in this time period and then do geometric mean for all tickers
         try:
             prices = []
             for ticker, _ in self.trade_data.exchange.get_stocks():
@@ -108,13 +107,10 @@ class Quant(HasStrictTraits):
                 if n:
                     price /= n # average in time period
                     prices.append(price)
-            #print(prices)
             result = geometric_mean(prices)
-            # compute geometric mean
         except ZeroDivisionError:
             result = "N/A"
         return result
-
 
 
 def main():
@@ -181,7 +177,6 @@ def main():
     # sub commands: price_report and record_trade
     subparsers = parser.add_subparsers(title='available commands',
                                        help='arguments ')
-
     # parser for command "price_report"
     parser_pr = subparsers.add_parser('price_report', help='<ticker> <market price>')
     parser_pr.add_argument('ticker', help='stock ticker')
